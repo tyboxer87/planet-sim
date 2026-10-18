@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d16">
+<meta name="description" content="An interactive gravity playground. Build solar systems, merge worlds, and follow the lives of stars.">
+<title>Planet Lab — a gravity playground</title>
+<style>
+  :root{color-scheme:dark;--bg:#080d16;--panel:rgba(15,23,36,.94);--line:#263344;--muted:#8d9cb0;--text:#e6edf7;--mint:#a0edc9;--gold:#ffd18a}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+  button,input,select{font:inherit}button,select,input{color:var(--text);background:#172131;border:1px solid var(--line);border-radius:8px}button{cursor:pointer;padding:8px 12px;transition:background .15s,border-color .15s}button:hover{background:#243347;border-color:#607388}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}button:disabled{opacity:.4;cursor:default}select{padding:8px;max-width:100%}input[type=checkbox]{accent-color:var(--mint)}input[type=number]{padding:8px;width:100%}a{color:var(--mint)}
+  #universe{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}#universe:active{cursor:grabbing}
+  header{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;gap:18px;align-items:center;padding:22px 28px;background:linear-gradient(#080d16 40%,transparent);pointer-events:none}header>*{pointer-events:auto}.brand{display:flex;align-items:center;gap:12px}.logo{width:36px;height:36px;display:grid;place-items:center;color:var(--mint);border:1px solid #456d63;border-radius:50%;font-size:25px}.brand h1{font-size:19px;letter-spacing:-.6px;margin:0;font-weight:650}.brand p{color:var(--muted);font-size:11px;margin:0;letter-spacing:1.6px;text-transform:uppercase}.header-actions{display:flex;align-items:center;gap:8px}.tag{font:10px ui-monospace,monospace;letter-spacing:1.5px;color:var(--mint);border:1px solid #36584e;border-radius:5px;padding:5px 8px;margin-right:8px}.quiet{background:rgba(15,23,36,.8)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #0003;backdrop-filter:blur(15px)}.eyebrow{font:10px ui-monospace,monospace;letter-spacing:1.7px;text-transform:uppercase;color:var(--muted)}
+  #overview{position:absolute;left:28px;top:103px;width:215px;padding:18px}.panel-title{display:flex;justify-content:space-between;align-items:center}.live{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px #a0edc950}.stats{display:grid;grid-template-columns:1fr 1fr;gap:17px 8px;margin-top:18px}.stat strong{font:20px ui-monospace,monospace;display:block;letter-spacing:-1px}.stat span{font-size:11px;color:var(--muted)}.stat.wide{grid-column:1/-1}.stat.wide strong{font-size:16px}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}.switch{display:flex;justify-content:space-between;align-items:center;margin:8px 0;color:#b6c3d4;font-size:12px}.switch input{width:15px;height:15px}.event-title{margin:18px 0 8px}.events{list-style:none;padding:0;margin:0}.events li{font-size:11px;color:var(--muted);padding:7px 0;border-top:1px solid #ffffff09}.events li:first-child{color:#c7d6e3}.event-dot{color:var(--mint);margin-right:5px}
+  #inspector{position:absolute;right:28px;top:103px;width:240px;padding:18px}#object-art{width:56px;height:56px;border-radius:50%;margin:14px auto 10px;background:radial-gradient(circle at 33% 30%,#fff1be,#ffa132 55%,#b35414);box-shadow:0 0 36px #ffb54635}.object-heading{text-align:center;margin-bottom:16px}#object-name{display:block;font-size:17px;font-weight:600}#object-type{color:var(--muted);font-size:12px}.badge{display:inline-block;color:var(--mint);border:1px solid #345849;background:#142b26;border-radius:5px;padding:2px 7px;font-size:10px;margin-top:7px}.readout{display:flex;justify-content:space-between;gap:10px;margin:11px 0;font-size:12px}.readout>span{color:var(--muted)}.readout strong{font-family:ui-monospace,monospace;font-weight:450;text-align:right}.life-bar{height:4px;border-radius:3px;background:#293444;overflow:hidden;margin:8px 0 12px}.life-bar div{height:100%;background:var(--mint);transition:width .2s}.small-note{font-size:11px;color:var(--muted);margin:8px 0}.inspector-buttons{display:flex;gap:6px;margin-top:14px}.inspector-buttons button{font-size:11px;flex:1;padding:7px}#age-star{width:100%;font-size:11px;margin-top:6px}.empty-inspector{text-align:center;color:var(--muted);padding:25px 5px;font-size:12px}
+  #center-title{position:absolute;top:110px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}#center-title h2{font-size:12px;font-weight:450;margin:0;letter-spacing:2px;text-transform:uppercase;color:#acb9c9}#center-title p{font-size:11px;color:#627389;margin-top:6px}#hint{position:absolute;bottom:242px;left:50%;transform:translateX(-50%);color:#9cacc0;font-size:12px;text-align:center;pointer-events:none;width:min(550px,70vw)}kbd{font:10px ui-monospace,monospace;color:#c8d4e0;border:1px solid #344151;border-radius:4px;padding:2px 5px;background:#101825}
+  #dock{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:min(880px,calc(100% - 56px));padding:17px 20px 14px}.dock-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}.dock-top .eyebrow{color:#b6c4d4}.dock-top span:last-child{color:var(--muted);font-size:11px}.object-menu{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.spawn-card{display:flex;align-items:center;gap:12px;text-align:left;padding:11px 12px;background:#141f2e;touch-action:none}.spawn-card[aria-pressed=true]{border-color:var(--mint);background:#1b302f}.spawn-card strong{font-weight:500;font-size:12px;display:block}.spawn-card small{color:var(--muted);font:10px ui-monospace,monospace}.mini-orb{flex-shrink:0;width:30px;height:30px;border-radius:50%}.sun{background:radial-gradient(circle at 35% 30%,#fff5bd,#ffb23d 60%,#d67318);box-shadow:0 0 15px #ffb23d35}.red{background:radial-gradient(circle at 35% 30%,#ffbe8b,#e8643c 60%,#9b2b26);box-shadow:0 0 15px #e8643c25}.rock{background:radial-gradient(circle at 30% 25%,#a6b4bf,#667887 52%,#293647)}.gas{background:repeating-linear-gradient(165deg,#cfb392 0px,#b38f78 6px,#edd3ab 9px,#998577 12px);box-shadow:inset -8px -4px 10px #0008}
+  .dock-bottom{display:flex;gap:16px;align-items:center;margin-top:13px;font-size:11px;color:var(--muted)}.dock-bottom label{display:flex;gap:6px;align-items:center}.dock-bottom input[type=number]{width:102px;padding:4px 6px;font:11px ui-monospace,monospace}.dock-bottom .mode-label{margin-left:auto}.dock-bottom select{font-size:11px;padding:4px}.control-bar{display:flex;align-items:center;gap:13px;border-top:1px solid var(--line);padding-top:13px;margin-top:13px}.primary{background:var(--mint);color:#11291f;border-color:var(--mint);font-weight:650}.primary:hover{background:#c6ffe3}.control-bar label{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}.control-bar select{padding:5px;font:11px ui-monospace,monospace}.spacer{flex:1}.zoom-controls{display:flex;gap:4px}.zoom-controls button{padding:5px 10px}.scale{font:10px ui-monospace,monospace;color:var(--muted);min-width:50px;text-align:center}.footnote{position:absolute;left:28px;bottom:4px;font:9px ui-monospace,monospace;color:#56687e;letter-spacing:.3px}#toast{position:absolute;left:50%;top:170px;transform:translateX(-50%);max-width:min(500px,85vw);padding:10px 18px;background:#1c3332;border:1px solid #427568;border-radius:9px;color:#d7ffef;font-size:12px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:8}#toast.visible{opacity:1}
+  dialog{background:#101a28;color:var(--text);border:1px solid #35485d;border-radius:18px;padding:28px;max-width:700px;width:calc(100% - 32px);max-height:85vh;box-shadow:0 20px 100px #000b}dialog::backdrop{background:#02060bc9;backdrop-filter:blur(6px)}dialog h2{font-size:25px;letter-spacing:-.8px;margin:7px 0 10px}dialog h3{font-size:15px;color:var(--mint);margin:22px 0 6px}dialog p,dialog li{font-size:13px;color:#b6c6d8}dialog .close{float:right}dialog table{border-collapse:collapse;width:100%;font-size:12px}dialog td,dialog th{padding:8px;text-align:left;border-bottom:1px solid #2a3748}dialog th{color:var(--muted);font-weight:500}.collapse-overlay{position:absolute;inset:0;background:radial-gradient(circle,transparent,#000);display:grid;place-items:center;text-align:center;z-index:6;pointer-events:none}.collapse-overlay[hidden]{display:none}.collapse-overlay h2{font-size:clamp(25px,4vw,52px);letter-spacing:-2px;margin:0}.collapse-overlay p{color:var(--muted)}
+  @media(min-width:1450px){#dock{width:940px}#overview{width:230px}#inspector{width:255px}}
+  @media(max-width:1050px){#overview{width:170px;left:16px}#inspector{width:205px;right:16px}.stats{gap:12px}.events li{font-size:10px}#dock{width:calc(100% - 32px)}header{padding:18px 16px}.tag{display:none}#center-title{top:95px}#hint{bottom:247px}.spawn-card{gap:8px;padding:10px}.control-bar{gap:10px}}
+  @media(max-width:700px){header{padding:12px}.brand h1{font-size:16px}.brand p{font-size:8px}.logo{width:30px;height:30px}.header-actions{gap:5px}.header-actions button{font-size:11px;padding:7px}.header-actions select{font-size:11px;width:105px}#overview{top:76px;left:12px;width:145px;padding:12px}#overview .events,#overview .event-title,#overview .divider{display:none}.stats{gap:7px;margin-top:10px}.stat strong{font-size:16px}.stat.wide strong{font-size:12px}.stat span{font-size:9px}.switch{font-size:10px;margin:5px 0}#inspector{top:76px;right:12px;width:165px;padding:12px}#object-art{height:35px;width:35px;margin:8px auto}#object-name{font-size:13px}.object-heading{margin-bottom:8px}#object-type,.readout{font-size:10px}.readout{margin:7px 0}.small-note{font-size:10px}.inspector-buttons{margin-top:8px}#center-title{display:none}#dock{bottom:18px;width:calc(100% - 24px);padding:12px}.spawn-card{display:block;padding:8px;text-align:center}.spawn-card .mini-orb{width:22px;height:22px;margin:0 auto 5px}.spawn-card strong{font-size:10px}.spawn-card small{font-size:8px}.dock-top{margin-bottom:9px}.dock-top span:last-child{font-size:9px}.dock-bottom{gap:8px;margin-top:8px;flex-wrap:wrap;font-size:10px}.dock-bottom .mode-label{margin-left:auto}.dock-bottom input[type=number]{width:85px}#orbit-help{display:none}.control-bar{gap:7px;margin-top:9px;padding-top:9px;flex-wrap:wrap}.control-bar label{font-size:9px;gap:4px}.control-bar select{font-size:10px;max-width:88px}.control-bar .spacer{display:none}.control-bar #pause{font-size:11px;padding:7px 9px}.zoom-controls{margin-left:auto}.zoom-controls button{padding:4px 8px}.scale{display:none}#hint{bottom:245px;font-size:10px;width:85vw}.footnote{font-size:7px;left:12px;bottom:3px}#toast{top:355px}.object-menu{gap:6px}}
+  @media(max-height:670px) and (min-width:701px){#overview{top:83px;padding:12px}.events li:nth-child(n+3){display:none}#inspector{top:83px;padding:12px}#object-art{width:32px;height:32px;margin:8px auto}.readout{margin:7px 0}.object-heading{margin-bottom:7px}#dock{bottom:18px;padding:12px}#hint{display:none}.dock-top{margin-bottom:8px}.spawn-card{padding:8px}.control-bar{padding-top:8px;margin-top:8px}}
+  @media(max-width:700px){.brand{gap:7px}.brand h1{font-size:14px}.brand p{display:none}.header-actions select{width:100px;font-size:10px}.header-actions button{font-size:10px}#reset{font-size:0;padding:5px 8px}#reset::before{content:'↻';font-size:14px}}
+  [hidden]{display:none!important}
+  #overview,#inspector{z-index:3}
+  .module-toggle,#inspect-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:32px;padding:0;border:0;background:transparent;text-align:left;line-height:1.5}
+  .module-toggle:hover,#inspect-toggle:hover{background:transparent;color:var(--mint)}
+  .module-toggle .eyebrow{color:#b6c4d4}.module-indicators{display:flex;align-items:center;gap:12px}.toggle-icon{font-size:17px;color:var(--mint);font-weight:400}
+  .module-content{max-height:var(--module-content-height,65vh);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  #overview.compact,#inspector.compact{padding-top:10px;padding-bottom:10px}
+  #dock{z-index:4;bottom:calc(24px + env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 175px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  #dock .dock-top{margin:0;min-height:36px}#dock .dock-top>.eyebrow{font-size:11px;color:#c2d0df}
+  .dock-modes{display:flex;gap:3px;padding:3px;background:#080f19;border:1px solid var(--line);border-radius:9px;flex-shrink:0}
+  .dock-modes button{min-height:30px;padding:4px 12px;border:0;background:transparent;color:var(--muted);font-size:11px}
+  .dock-modes button[aria-pressed=true]{background:#233c36;color:var(--mint)}
+  .dock-help{font-size:11px;color:var(--muted);margin:12px 0 10px}
+  #dock[data-mode=objects]{width:min(580px,calc(100% - 56px))}
+  #dock[data-mode=collapsed]{width:min(420px,calc(100% - 56px));padding-top:10px;padding-bottom:10px}
+  #dock[data-mode=objects] .object-menu{margin-top:12px}#dock[data-mode=objects] .spawn-card{justify-content:center;padding:10px 8px;min-height:62px}
+  #dock[data-mode=objects] .spawn-card small{display:none}#dock[data-mode=objects] .mini-orb{width:24px;height:24px}
+  #quick-controls{position:absolute;z-index:4;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:5px;border-radius:11px}#quick-controls button{min-width:65px;min-height:34px;font-size:12px}
+  @media(max-width:700px){
+    header{gap:8px}.header-actions{min-width:0}.header-actions select{width:88px;min-width:0}.header-actions button{white-space:nowrap}.brand{flex-shrink:0}
+    #overview,#inspector{top:70px;width:calc(50% - 18px);padding:8px 12px}
+    #overview:not(.compact),#inspector:not(.compact){z-index:5}
+    #overview .module-content,#inspector .module-content{position:absolute;top:calc(100% + 8px);width:calc(100vw - 24px);padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #0005}
+    #overview .module-content{left:0}#inspector .module-content{right:0}
+    .module-toggle,#inspect-toggle{min-height:44px}.module-toggle .eyebrow{font-size:9px;letter-spacing:1px}
+    #overview .events,#overview .event-title,#overview .divider{display:revert}#overview .events{display:block}
+    #overview .switch{min-height:38px;font-size:12px}#overview .switch input{width:20px;height:20px}
+    #overview .stats{gap:12px;margin-top:12px}#overview .stat strong{font-size:19px}#overview .stat.wide strong{font-size:15px}#overview .stat span{font-size:11px}
+    #inspector .small-note,#inspector #object-type,#inspector .readout{font-size:12px}#inspector #object-list{min-height:44px;font-size:12px!important}#inspector .inspector-buttons button,#inspector #age-star{min-height:44px;font-size:12px}
+    #dock,#dock[data-mode=objects],#dock[data-mode=collapsed]{width:calc(100% - 24px);bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:10px 12px}
+    #dock .dock-top>.eyebrow{font-size:10px;letter-spacing:1px}.dock-modes{gap:0;padding:2px}.dock-modes button{min-height:40px;padding:5px 9px;font-size:11px}
+    #dock .spawn-card{min-height:74px}#dock .spawn-card small{display:none}#dock .spawn-card strong{font-size:10px;white-space:nowrap}
+    #dock .dock-bottom{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}#dock .dock-bottom label{flex-wrap:wrap;font-size:11px}#dock .dock-bottom .mode-label{margin:0;justify-content:flex-end}#spawn-mass,#launch{min-height:40px}
+    #dock .control-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px}#dock .control-bar label{flex-direction:column;align-items:stretch;font-size:9px}#dock .control-bar select{min-height:40px;max-width:none;font-size:11px}#dock #pause{min-height:44px;grid-column:1/-1}#dock .zoom-controls{grid-column:1/-1;justify-content:center;margin:0}#dock .zoom-controls button{min-height:40px;min-width:52px}
+    #quick-controls button{min-height:44px;padding:8px 14px}#dock[data-mode=objects] .spawn-card{min-height:68px}
+    .footnote{display:none}
+  }
+  @media(max-width:360px){.brand .logo{display:none}.header-actions select{width:83px}.header-actions button{padding-left:6px;padding-right:6px}.module-toggle .eyebrow{font-size:8px;letter-spacing:.7px}.module-indicators{gap:7px}.dock-modes button{padding-left:7px;padding-right:7px}#dock .spawn-card strong{white-space:normal;font-size:9px}}
+  @media(max-height:500px) and (min-width:701px){#overview,#inspector{top:76px}#dock{max-height:calc(100dvh - 145px)}#center-title{display:none}}
+  @media(max-width:700px){#hint{display:none}.stat span{font-size:8px;white-space:nowrap}}
+</style>
+</head>
+<body>
+<canvas id="universe" tabindex="0" aria-label="Interactive planet simulation. Drag bodies to move them, drag empty space to pan, and scroll to zoom. Use the object list to select bodies with a keyboard."></canvas>
+<header>
+  <div class="brand"><div class="logo" aria-hidden="true">◉</div><div><h1>Planet Lab<span style="color:var(--mint)">.</span></h1><p>A gravity playground</p></div></div>
+  <div class="header-actions"><span class="tag">SANDBOX / 01</span><select id="preset" aria-label="Load a scenario"><option value="solar">Solar neighborhood</option><option value="mergers">Collision course</option><option value="nursery">Stellar nursery</option><option value="empty">Empty universe</option></select><button id="reset" class="quiet" title="Reload the current scenario">↻ Reset</button><button id="science" class="quiet">Science & help</button></div>
+</header>
+<aside id="overview" class="panel" aria-label="Universe statistics">
+  <button id="overview-toggle" class="module-toggle" aria-expanded="true" aria-controls="overview-content"><span class="eyebrow">Your universe</span><span class="module-indicators"><span class="live" id="live-dot" aria-hidden="true"></span><span class="toggle-icon" aria-hidden="true">−</span></span></button>
+  <div id="overview-content" class="module-content">
+  <div class="stats"><div class="stat"><strong id="body-count">0</strong><span>celestial bodies</span></div><div class="stat"><strong id="life-count">0</strong><span>living worlds</span></div><div class="stat wide"><strong id="total-mass">0 M☉</strong><span>total mass · solar masses</span></div><div class="stat wide"><strong id="elapsed">0.00 yr</strong><span>orbital time elapsed</span></div><div class="stat wide"><strong id="stellar-elapsed">0 Myr</strong><span>stellar time elapsed</span></div></div>
+  <hr class="divider"><label class="switch">Motion trails<input id="trails" type="checkbox" checked></label><label class="switch">Object labels<input id="labels" type="checkbox" checked></label><label class="switch">Habitable zones<input id="zones" type="checkbox" checked></label><label class="switch" title="Arcade rule: a 40-solar-mass black hole triggers a universe reset.">Black-hole finale<input id="finale" type="checkbox" checked></label>
+  <div class="eyebrow event-title">Field notes</div><ul class="events" id="events" aria-label="Recent events"></ul>
+  </div>
+</aside>
+<div id="center-title"><h2 id="scenario-title">A little room for the extraordinary</h2><p>Every object attracts every other object.</p></div>
+<aside id="inspector" class="panel" aria-label="Selected object">
+  <button id="inspect-toggle" class="module-toggle" aria-expanded="true" aria-controls="inspector-content"><span class="eyebrow">Inspector</span><span class="toggle-icon" aria-hidden="true">−</span></button>
+  <div id="inspector-content" class="module-content">
+  <label class="small-note" for="object-list">Select an object</label><select id="object-list" style="width:100%;font-size:11px" aria-label="Select an object"><option value="">Choose a body…</option></select>
+  <div id="inspection"><div class="empty-inspector">Select a world or star<br>to take a closer look.</div></div>
+  </div>
+</aside>
+<div id="hint">Drag a world. Build an orbit. See what happens.<br><span style="font-size:10px;color:#63768c">Scroll to zoom · drag space to pan · <kbd>Space</kbd> to pause</span></div>
+<section id="dock" class="panel" data-mode="full" aria-label="Object creation and simulation controls">
+  <div class="dock-top"><span class="eyebrow">Create objects</span><div class="dock-modes" role="group" aria-label="Creation panel view"><button data-dock-mode="full" aria-pressed="true" aria-controls="creation-content" title="Show objects and all controls">Full</button><button data-dock-mode="objects" aria-pressed="false" aria-controls="creation-content" title="Show just the four objects">Objects</button><button data-dock-mode="collapsed" aria-pressed="false" aria-controls="creation-content" title="Collapse the creation panel">Hide</button></div></div>
+  <div id="creation-content">
+  <p id="dock-help" class="dock-help">Drag an object into space, or select & click to place.</p>
+  <div class="object-menu">
+    <button class="spawn-card" data-kind="yellow" aria-pressed="false"><div class="mini-orb sun" aria-hidden="true"></div><div><strong>Yellow star</strong><small>1.000 M☉ · 5,772 K</small></div></button>
+    <button class="spawn-card" data-kind="red" aria-pressed="false"><div class="mini-orb red" aria-hidden="true"></div><div><strong>Red dwarf</strong><small>0.150 M☉ · ~3,000 K</small></div></button>
+    <button class="spawn-card" data-kind="rocky" aria-pressed="false"><div class="mini-orb rock" aria-hidden="true"></div><div><strong>Rocky planet</strong><small>3.003 × 10⁻⁶ M☉</small></div></button>
+    <button class="spawn-card" data-kind="gas" aria-pressed="false"><div class="mini-orb gas" aria-hidden="true"></div><div><strong>Gas giant</strong><small>9.546 × 10⁻⁴ M☉</small></div></button>
+  </div>
+  <div id="creation-advanced">
+  <div class="dock-bottom"><label>Spawn mass <input id="spawn-mass" type="number" min="0.0000001" max="100" step="any" value="1" aria-label="New object mass in solar masses"> M☉</label><span id="orbit-help">Composition determines whether fusion can ignite.</span><label class="mode-label">Launch <select id="launch"><option value="orbit">Auto orbit</option><option value="still">At rest</option><option value="aim">Aim velocity</option></select></label></div>
+  <div class="control-bar"><button id="pause" class="primary" aria-pressed="false">Ⅱ Pause</button><label>ORBITS <select id="orbit-rate"><option value="0.1">0.1 yr / s</option><option value="0.5" selected>0.5 yr / s</option><option value="1">1 yr / s</option><option value="5">5 yr / s</option><option value="20">20 yr / s</option></select></label><label>STELLAR AGE <select id="age-rate"><option value="0">Frozen</option><option value="0.1">0.1 Myr / s</option><option value="1">1 Myr / s</option><option value="10" selected>10 Myr / s</option><option value="100">100 Myr / s</option><option value="1000">1 Gyr / s</option></select></label><div class="spacer"></div><span id="scale" class="scale">1 AU</span><div class="zoom-controls"><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit" title="Fit all bodies in view">Fit</button><button id="zoom-in" aria-label="Zoom in">+</button></div></div>
+  </div></div>
+</section>
+<div id="quick-controls" class="panel" aria-label="Quick simulation controls" hidden><button id="quick-pause" class="primary" aria-pressed="false">Ⅱ Pause</button><button id="quick-fit" title="Fit all bodies in view">Fit</button></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="footnote">NEWTONIAN GRAVITY · AU / M☉ / K · VISUAL & COLLISION RADII ENLARGED · STELLAR TIME ACCELERATED</div>
+<div id="collapse-overlay" class="collapse-overlay" hidden><div><div class="eyebrow">Arcade finale</div><h2>A quiet end. A new beginning.</h2><p>The black hole has reached 40 M☉. A fresh universe is on its way.</p></div></div>
+<dialog id="science-dialog" aria-labelledby="science-title">
+  <button class="close" id="close-science" aria-label="Close science and help">✕</button><div class="eyebrow">The rules of this little universe</div><h2 id="science-title">Cosmic curiosity. Grounded in science.</h2>
+  <p>This is a playable model, not a precision astrophysics simulator. Mass is always in solar masses (M☉), distance in astronomical units (AU), temperature in Kelvin (K). One Sun is 1 M☉; Earth is about 0.000003 M☉.</p>
+  <h3>Build, move, experiment</h3><p>Drag a card into space to create an object, or click a card then click the canvas. Change spawn mass before placing. Drag an existing body to reposition it; its velocity is retained. Auto orbit gives new bodies a roughly circular velocity around the strongest nearby attractor. In Aim velocity mode, drag from the launch point: the arrow sets the new velocity (1 AU of arrow = 5 AU/yr). Press Escape to cancel placement; Space pauses; Delete removes the selected object. Use Fit to find objects that travel offscreen. The object selector and “Place at view center” control provide keyboard access.</p><button id="place-center">Place selected type at view center</button>
+  <h3>From giant planets to stars</h3><table><thead><tr><th>Hydrogen-rich mass</th><th>Game classification</th></tr></thead><tbody><tr><td>Below ~0.0124 M☉</td><td>Gas giant</td></tr><tr><td>~0.0124–0.075 M☉</td><td>Brown dwarf</td></tr><tr><td>~0.075–0.5 M☉</td><td>Red dwarf</td></tr><tr><td>~0.5–1.4 M☉</td><td>Orange / yellow star</td></tr><tr><td>Above ~1.4 M☉</td><td>White / blue main-sequence star</td></tr></tbody></table>
+  <p>Mergers conserve mass and linear momentum, and combine remaining fuel by mass. Gas-rich mergers can cross the hydrogen-fusion threshold. A pile of rocks does not simply become a hydrogen-burning star. Brown-dwarf boundaries depend on composition and formation; the ~13-Jupiter-mass deuterium boundary is a convenient convention. Massive blue main-sequence stars become giants later; mass alone does not make a blue giant. Real collisions can shed mass, fragment, or disrupt bodies; here they stick.</p>
+  <h3>Stars have different endings</h3><p>Sun-like stars expand into red giants and shed gas, leaving a <b>white dwarf</b>—not a red dwarf. Low-mass red dwarfs live for hundreds of billions to trillions of years, then are expected to become white dwarfs; none has had time to do so yet. The life bar is an approximate fuel clock, with a short giant stage added for stars above 0.5 M☉.</p>
+  <p>Stars initially above about 8 M☉ undergo core-collapse supernovae. This model leaves a neutron star for 8–20 M☉ progenitors and a black hole above 20 M☉. These remnant boundaries are schematic: real outcomes depend on core mass, composition, winds, and companions. A remnant neutron star above 2.3 M☉ collapses here; that is an uncertain model choice. Accreting white dwarfs reaching 1.4 M☉ undergo a simplified thermonuclear supernova.</p>
+  <p>Ejected material stays in the simulation as massive gas clouds, so total mass is conserved. After a compressed 60 Myr cooling delay, sufficiently massive clouds become protostars; another 5 Myr ignites fusion. This deliberately shortcuts cloud fragmentation, cooling, and collapse. Supernovae do not directly create ready-made stars. No radiated mass loss, stellar winds, relativity, or detailed chemistry is modeled.</p>
+  <h3>Warm enough for water ≠ guaranteed life</h3><p>Planet temperatures combine radiation from all luminous objects: T<sub>eq</sub> = 278.3 K × [(1 − albedo) Σ(L/L☉)/(distance/AU)²]<sup>¼</sup>. Rocky worlds assume Earth-like albedo 0.30 and a 33 K greenhouse offset, tapered toward zero below 100 K equilibrium temperature; gas giants have an intrinsic heat floor. These are rough estimates, not climate calculations. Stellar temperatures are surface effective temperatures; a black hole shows its extremely small Hawking temperature, not a hot accretion-disk temperature.</p>
+  <p>Below 273 K a rocky world is tagged icy; 273–373 K is water-friendly under an assumed ~1 bar atmosphere. A world with 100 Myr continuously between 273–323 K grows <b>simulated life</b>. Real life also needs chemistry, water, an atmosphere, and time, and its origin is unknown. Above 373 K worlds are hot, but rocks are only tagged molten above 1,400 K; melting temperature depends on composition and pressure. The green ring is an approximate single-star 273–323 K surface-temperature band, not a guarantee of habitability, especially with multiple stars.</p>
+  <h3>Two clocks, one playground</h3><p>Gravity uses G = 4π² in AU³ M☉⁻¹ yr⁻², all-pairs forces, softened at 0.008 AU, and an adaptive leapfrog integrator. Orbital time and stellar time advance separately so you can see both processes. The orbital clock slows if close encounters need extra precision. Radii and collision cross-sections are enlarged for playability, independently of zoom. Dragging, spawning, and removing objects are external interventions.</p>
+  <h3>The black-hole ending is an arcade rule</h3><p>Real black holes attract distant objects just like any other body of the same mass. They do not vacuum up the universe. Here, the optional finale starts when a black hole reaches <b>40 M☉</b>, spirals all objects inward, then resets to the solar neighborhood. Switch off “Black-hole finale” for ordinary gravity and accretion.</p>
+  <h3>Read the real science</h3><p><a href="https://science.nasa.gov/universe/stars/types/" target="_blank" rel="noopener">NASA: Types of stars</a> · <a href="https://science.nasa.gov/exoplanets/stars/" target="_blank" rel="noopener">NASA: Stellar lifetimes and remnants</a> · <a href="https://science.nasa.gov/exoplanets/habitable-zone/" target="_blank" rel="noopener">NASA: The habitable zone</a> · <a href="https://science.nasa.gov/universe/black-holes/" target="_blank" rel="noopener">NASA: Black holes</a></p>
+</dialog>
+<script>
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('universe'), ctx = canvas.getContext('2d');
+  const G = 4 * Math.PI ** 2, SOFT = .008, EARTH = 3.003e-6, JUPITER = .0009546, LIMIT = 150;
+  const defaults = { yellow:1, red:.15, rocky:EARTH, gas:JUPITER };
+  const names = {rocky:'Rocky planet',gas:'Gas giant',brown:'Brown dwarf',red:'Red dwarf',orange:'Orange star',yellow:'Yellow star',white:'White star',blue:'Blue star',giant:'Red giant',blueGiant:'Blue supergiant',whiteDwarf:'White dwarf',neutron:'Neutron star',blackHole:'Black hole',cloud:'Gas cloud',protostar:'Protostar'};
+  const colors = {rocky:'#8a9aab',gas:'#d8b598',brown:'#b96045',red:'#ff7953',orange:'#ffae60',yellow:'#ffd477',white:'#e7efff',blue:'#91c9ff',giant:'#ff7045',blueGiant:'#b8daff',whiteDwarf:'#dcecff',neutron:'#c8eaff',blackHole:'#ffa95c',cloud:'#b49adc',protostar:'#ffc3a0'};
+  const state = {bodies:[],nextId:1,selected:null,spawnKind:null,paused:false,years:0,myr:0,events:[],effects:[],camera:{x:0,y:0,zoom:110},width:0,height:0,drag:null,follow:false,collapse:null,scenario:'solar',toastUntil:0};
+  const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+  const stellarKind = m => m < .5 ? 'red' : m < .8 ? 'orange' : m < 1.4 ? 'yellow' : m < 2.1 ? 'white' : 'blue';
+  const isStar = b => ['red','orange','yellow','white','blue','giant','blueGiant'].includes(b.kind);
+  const isLuminous = b => isStar(b) || ['protostar','whiteDwarf','neutron','brown'].includes(b.kind);
+  const lifetime = m => 10000 * m / luminosityMS(m); // Myr; crude mass / luminosity fuel scaling
+  function luminosityMS(m) { return m < .43 ? .23*m**2.3 : m < 2 ? m**4 : m < 20 ? 1.5*m**3.5 : 1.5*20**3.5*(m/20)**1.5; }
+  function massText(m) { return m < .001 ? m.toExponential(3)+' M☉' : (m < .1 ? m.toFixed(5) : m.toFixed(3))+' M☉'; }
+  function numberText(n) { return Math.round(n).toLocaleString('en-US'); }
+  function phase(b) {
+    if(b.kind!=='rocky') return names[b.kind];
+    return b.temp >= 1400 ? 'Molten lava world' : b.temp > 373 ? 'Hot rocky world' : b.temp < 273 ? 'Icy world' : b.life ? 'Living world' : 'Temperate world';
+  }
+  function classify(b) {
+    if(['blackHole','neutron','whiteDwarf','cloud','protostar'].includes(b.kind)) return;
+    if(b.gasFraction < .45) { b.kind='rocky'; return; }
+    b.kind = b.mass < .0124 ? 'gas' : b.mass < .075 ? 'brown' : stellarKind(b.mass);
+    if(isStar(b) && b.mass >= .5 && b.age/lifetime(b.mass) >= .9) b.kind = b.mass >= 20 ? 'blueGiant' : 'giant';
+  }
+  function makeBody(kind,mass,x,y,extra={}) {
+    const b = {id:state.nextId++,kind,mass,x,y,vx:0,vy:0,age:0,temp:0,gasFraction:kind==='rocky'?0:1,life:false,habitableTime:0,trail:[],name:'',...extra};
+    classify(b); updateStellar(b); b.name ||= names[b.kind]+' '+b.id;
+    return b;
+  }
+  function updateStellar(b) {
+    const m=b.mass;
+    if(isStar(b)) {
+      b.luminosity = luminosityMS(m) * (1+.4*clamp(b.age/lifetime(m),0,1));
+      b.temp = m < .5 ? 2400+2000*m**.55 : 5772*m**.5;
+      if(b.kind==='giant') {b.luminosity*=100;b.temp=3500;}
+      if(b.kind==='blueGiant') {b.luminosity*=2;b.temp=18000;}
+    } else if(b.kind==='protostar') { b.temp=3000; b.luminosity=Math.max(.0001,luminosityMS(m)*.4); }
+    else if(b.kind==='whiteDwarf') {b.temp=Math.max(3000,25000/(1+b.age/500)**.4);b.luminosity=.012**2*(b.temp/5772)**4;}
+    else if(b.kind==='neutron') {b.temp=Math.max(10000,1e6/(1+b.age*10)**.5);b.luminosity=(1.7e-5)**2*(b.temp/5772)**4;}
+    else if(b.kind==='blackHole') {b.temp=6.17e-8/m;b.luminosity=0;}
+    else if(b.kind==='brown') {b.temp=Math.max(300,2200*(m/.075)**.4/(1+b.age/1000)**.25);b.luminosity=.1**2*(b.temp/5772)**4;}
+    else if(b.kind==='cloud') {b.temp=40+4000*Math.exp(-b.age/5);b.luminosity=0;}
+    else b.luminosity=0;
+  }
+  function radius(b) { // fixed display radius in pixels; does not set gravitational strength
+    if(b.kind==='blackHole') return 13+Math.log2(1+b.mass)*2;
+    if(b.kind==='neutron') return 5;
+    if(b.kind==='whiteDwarf') return 7;
+    if(b.kind==='cloud') return 14+Math.log2(1+b.mass)*2;
+    if(b.kind==='rocky') return clamp(6*(b.mass/EARTH)**.22,4,22);
+    if(b.kind==='gas'||b.kind==='brown') return clamp(12+2*Math.log10(b.mass/JUPITER),9,20);
+    if(b.kind==='giant'||b.kind==='blueGiant') return 35+Math.log2(1+b.mass)*2;
+    return 15+Math.log2(1+b.mass)*3;
+  }
+  function collisionRadius(b) {return radius(b)/110*.23;}
+  function event(message) {
+    state.events.unshift(message); state.events.length=Math.min(4,state.events.length);
+    $('events').replaceChildren(...state.events.map(t=>{const li=document.createElement('li');li.textContent='· '+t;return li;}));
+  }
+  function toast(message) {$('toast').textContent=message;$('toast').classList.add('visible');state.toastUntil=performance.now()+3500;}
+  function effect(x,y,color='#ffd18a',size=1) {state.effects.push({x,y,color,age:0,size});}
+  function selected() {return state.bodies.find(b=>b.id===state.selected);}
+  function toScreen(x,y) {return {x:(x-state.camera.x)*state.camera.zoom+state.width/2,y:(y-state.camera.y)*state.camera.zoom+state.height*.46};}
+  function toWorld(x,y) {return {x:(x-state.width/2)/state.camera.zoom+state.camera.x,y:(y-state.height*.46)/state.camera.zoom+state.camera.y};}
+  function fit() {
+    state.follow=false;
+    if(!state.bodies.length){state.camera={x:0,y:0,zoom:110};return;}
+    const xs=state.bodies.map(b=>b.x),ys=state.bodies.map(b=>b.y);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    state.camera.x=(minX+maxX)/2;state.camera.y=(minY+maxY)/2;
+    state.camera.zoom=clamp(Math.min(Math.max(200,state.width-540)/Math.max(3,maxX-minX+1),Math.max(170,state.height-350)/Math.max(2,maxY-minY+1)),3,180);
+  }
+  function orbitVelocity(b) {
+    let host=null,best=0;
+    for(const other of state.bodies) {
+      if(other===b||other.mass<b.mass*2)continue;
+      const d2=(other.x-b.x)**2+(other.y-b.y)**2;
+      if(d2>.0001 && other.mass/d2>best){best=other.mass/d2;host=other;}
+    }
+    if(host){const dx=b.x-host.x,dy=b.y-host.y,d=Math.hypot(dx,dy);const v=Math.sqrt(G*host.mass/d);b.vx=host.vx-dy/d*v;b.vy=host.vy+dx/d*v;}
+  }
+  function add(kind,x,y,velocity=null) {
+    if(state.collapse)return null;
+    if(state.bodies.length>=LIMIT){toast('This universe holds up to 150 bodies. Remove a body to make room.');return null;}
+    const mass=Number($('spawn-mass').value);
+    if(!Number.isFinite(mass)||mass<1e-7||mass>100){toast('Choose a mass between 0.0000001 and 100 M☉.');return null;}
+    const b=makeBody(kind,mass,x,y);
+    if(velocity){b.vx=velocity.x;b.vy=velocity.y;}
+    else if($('launch').value==='orbit')orbitVelocity(b);
+    state.bodies.push(b);state.selected=b.id;state.follow=false;temperatures(0);event(names[b.kind]+' added · '+massText(b.mass));refreshInspector(true);return b;
+  }
+  function chooseKind(kind) {
+    if(state.spawnKind!==kind)$('spawn-mass').value=defaults[kind];
+    state.spawnKind=kind;
+    document.querySelectorAll('.spawn-card').forEach(card=>card.setAttribute('aria-pressed',String(card.dataset.kind===kind)));
+    canvas.style.cursor='crosshair';$('hint').firstChild.textContent='Place your '+names[kind].toLowerCase()+'. Escape cancels.';
+  }
+  function cancelPlacement() {state.spawnKind=null;paletteDrag=null;document.querySelectorAll('.spawn-card').forEach(c=>c.setAttribute('aria-pressed','false'));canvas.style.cursor='grab';$('hint').firstChild.textContent='Drag a world. Build an orbit. See what happens.';}
+  function merge(a,b) {
+    const mass=a.mass+b.mass;
+    const older=a.mass>=b.mass?a:b;
+    let kind=(a.kind==='blackHole'||b.kind==='blackHole')?'blackHole':(a.kind==='neutron'||b.kind==='neutron')?'neutron':(a.kind==='whiteDwarf'||b.kind==='whiteDwarf')?'whiteDwarf':a.kind==='cloud'&&b.kind==='cloud'?'cloud':'gas';
+    const fuel=(a.mass*(isStar(a)?clamp(1-a.age/lifetime(a.mass),0,1):a.gasFraction)+b.mass*(isStar(b)?clamp(1-b.age/lifetime(b.mass),0,1):b.gasFraction))/mass;
+    const merged=makeBody(kind,mass,(a.x*a.mass+b.x*b.mass)/mass,(a.y*a.mass+b.y*b.mass)/mass,{vx:(a.vx*a.mass+b.vx*b.mass)/mass,vy:(a.vy*a.mass+b.vy*b.mass)/mass,gasFraction:(a.gasFraction*a.mass+b.gasFraction*b.mass)/mass,name:older.name,habitableTime:0});
+    if(isStar(merged)){merged.age=(1-fuel)*lifetime(mass);classify(merged);updateStellar(merged);}
+    if(kind==='neutron'&&mass>2.3){merged.kind='blackHole';updateStellar(merged);}
+    state.bodies=state.bodies.filter(o=>o!==a&&o!==b);state.bodies.push(merged);
+    if(state.selected===a.id||state.selected===b.id)state.selected=merged.id;
+    if(state.drag && (state.drag.body===a||state.drag.body===b))state.drag.body=merged;
+    effect(merged.x,merged.y,colors[merged.kind]);event('Merger → '+names[merged.kind]+' · '+massText(mass));
+    if(merged.kind==='whiteDwarf'&&merged.mass>=1.4)explode(merged,true);
+    return merged;
+  }
+  function collisions() {
+    for(let i=0;i<state.bodies.length;i++)for(let j=i+1;j<state.bodies.length;j++) {
+      const a=state.bodies[i],b=state.bodies[j];
+      if(a.kind==='cloud'||b.kind==='cloud') { // diffuse gas passes ordinary bodies; black holes can accrete it
+        if((a.kind==='cloud')!==(b.kind==='cloud')&&a.kind!=='blackHole'&&b.kind!=='blackHole')continue;
+      }
+      const r=collisionRadius(a)+collisionRadius(b);
+      if((a.x-b.x)**2+(a.y-b.y)**2<r*r){merge(a,b);i=-1;break;}
+    }
+  }
+  function accelerations() {
+    const bs=state.bodies;
+    for(const b of bs){b.ax=0;b.ay=0;}
+    let safe=.006;
+    for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++) {
+      const a=bs[i],b=bs[j],dx=b.x-a.x,dy=b.y-a.y,r2=dx*dx+dy*dy+SOFT*SOFT,r=Math.sqrt(r2),f=G/(r2*r);
+      a.ax+=f*b.mass*dx;a.ay+=f*b.mass*dy;b.ax-=f*a.mass*dx;b.ay-=f*a.mass*dy;
+      safe=Math.min(safe,.035*Math.sqrt(r2*r/(G*(a.mass+b.mass))));
+      const speed=Math.hypot(a.vx-b.vx,a.vy-b.vy);
+      if(speed>0)safe=Math.min(safe,.3*Math.max(collisionRadius(a)+collisionRadius(b),SOFT)/speed);
+    }
+    return Math.max(1e-7,safe);
+  }
+  function physics(duration) {
+    let left=duration,used=0,steps=0;
+    while(left>1e-10 && steps++<160) {
+      collisions();const dt=Math.min(left,accelerations());
+      for(const b of state.bodies) {
+        if(state.drag?.body===b)continue;
+        b.vx+=b.ax*dt/2;b.vy+=b.ay*dt/2;b.x+=b.vx*dt;b.y+=b.vy*dt;
+      }
+      accelerations();
+      for(const b of state.bodies){if(state.drag?.body!==b){b.vx+=b.ax*dt/2;b.vy+=b.ay*dt/2;}}
+      left-=dt;used+=dt;
+    }
+    collisions();state.years+=used;return used;
+  }
+  function eject(b,remnantMass,count,supernova) {
+    const ejectaMass=b.mass-remnantMass;
+    const room=Math.max(1,LIMIT-state.bodies.length-(remnantMass>0?1:0));
+    count=Math.min(count,room);
+    // Symmetric radial ejecta carry the parent momentum; all ejected mass stays in the model.
+    for(let i=0;i<count;i++) {
+      const angle=i/count*Math.PI*2,dx=count===1?0:Math.cos(angle),dy=count===1?0:Math.sin(angle);
+      const cloud=makeBody('cloud',ejectaMass/count,b.x+dx*.65,b.y+dy*.65,{vx:b.vx+dx*(supernova?3:.8),vy:b.vy+dy*(supernova?3:.8),name:'Ejecta '+state.nextId,gasFraction:.7});
+      state.bodies.push(cloud);
+    }
+  }
+  function explode(b,thermonuclear=false) {
+    if(!state.bodies.includes(b))return;
+    const initialMass=b.mass;
+    const core=thermonuclear?0:initialMass>=20?Math.max(3,initialMass*.25):1.4;
+    // Remove the progenitor before making clouds; retain the original object for a core remnant.
+    state.bodies=state.bodies.filter(o=>o!==b);eject(b,core,6,true);
+    if(core>0){b.mass=core;b.kind=core>=3?'blackHole':'neutron';b.age=0;b.trail=[];b.life=false;b.gasFraction=0;updateStellar(b);state.bodies.push(b);}
+    else if(state.selected===b.id){state.selected=null;state.follow=false;}
+    effect(b.x,b.y,'#b7dfff',5);event('Supernova! '+(core?names[b.kind]+' + cooling ejecta.':'White dwarf disrupted into ejecta.'));toast('Supernova — '+(core?'a '+names[b.kind].toLowerCase()+' remains.':'thermonuclear disruption.'));
+  }
+  function evolve(myr) {
+    for(const b of [...state.bodies]) {
+      if(!state.bodies.includes(b))continue;
+      b.age+=myr;
+      if(isStar(b)) {
+        if(b.age>=lifetime(b.mass)) {
+          if(b.mass>=8){explode(b);continue;}
+          const core=Math.min(b.mass,.109*b.mass+.394);
+          if(core<b.mass){eject(b,core,4,false);b.mass=core;}
+          b.kind='whiteDwarf';b.age=0;b.life=false;b.gasFraction=0;effect(b.x,b.y,'#d4eaff',2);event(b.name+' shed its envelope → white dwarf.');
+        } else classify(b);
+      } else if(b.kind==='cloud'&&b.age>=60&&b.mass>=.075) {
+        b.kind='protostar';b.age=0;event('A cooling gas clump became a protostar.');
+      } else if(b.kind==='protostar'&&b.age>=5) {
+        b.kind=stellarKind(b.mass);b.age=0;event('Hydrogen fusion ignited · '+massText(b.mass));effect(b.x,b.y,'#ffd18a',2);
+      }
+      updateStellar(b);
+    }
+    state.myr+=myr;temperatures(myr);
+  }
+  function temperatures(myr) {
+    const lights=state.bodies.filter(isLuminous);
+    for(const b of state.bodies) {
+      if(b.kind!=='rocky'&&b.kind!=='gas')continue;
+      let flux=0;
+      for(const light of lights){if(light!==b)flux+=light.luminosity/Math.max(.0001,(b.x-light.x)**2+(b.y-light.y)**2);}
+      const eq=278.3*(.7*flux)**.25;
+      b.temp=b.kind==='rocky'?Math.max(2.725,eq+33*Math.min(1,eq/100)):Math.max(80,(eq**4+100**4)**.25);
+      if(b.kind==='rocky') {
+        const wasAlive=b.life;
+        if(b.temp>=273&&b.temp<=323)b.habitableTime+=myr;else{b.habitableTime=0;b.life=false;}
+        if(b.habitableTime>=100)b.life=true;
+        if(!wasAlive&&b.life){event('Simulated life emerged on '+b.name+'.');effect(b.x,b.y,'#a0edc9',2);}
+        if(wasAlive&&!b.life)event(b.name+' lost its surface biosphere.');
+      }
+    }
+  }
+  function checkFinale() {
+    if(!state.collapse&&$('finale').checked){const b=state.bodies.find(b=>b.kind==='blackHole'&&b.mass>=40);if(b){state.collapse={body:b,time:0};state.drag=null;cancelPlacement();$('collapse-overlay').hidden=false;event('40 M☉ reached. Arcade finale begins.');}}
+  }
+  function finaleStep(dt) {
+    const c=state.collapse;if(!c)return;c.time+=dt;
+    for(const b of [...state.bodies]) {
+      if(b===c.body)continue;
+      const dx=b.x-c.body.x,dy=b.y-c.body.y,angle=dt*2.5,fall=Math.exp(-dt*(1.3+c.time));
+      b.x=c.body.x+(dx*Math.cos(angle)-dy*Math.sin(angle))*fall;b.y=c.body.y+(dx*Math.sin(angle)+dy*Math.cos(angle))*fall;
+      if(Math.hypot(b.x-c.body.x,b.y-c.body.y)<.07){c.body.mass+=b.mass;state.bodies=state.bodies.filter(o=>o!==b);}
+    }
+    state.camera.x+=(c.body.x-state.camera.x)*Math.min(1,dt*2);state.camera.y+=(c.body.y-state.camera.y)*Math.min(1,dt*2);
+    if(c.time>4.5){loadPreset('solar');toast('A new beginning. Your universe has been reset.');}
+  }
+  function barycentric() {
+    const total=state.bodies.reduce((s,b)=>s+b.mass,0);if(!total)return;
+    const vx=state.bodies.reduce((s,b)=>s+b.mass*b.vx,0)/total,vy=state.bodies.reduce((s,b)=>s+b.mass*b.vy,0)/total;
+    for(const b of state.bodies){b.vx-=vx;b.vy-=vy;}
+  }
+  function loadPreset(name) {
+    state.bodies=[];state.selected=null;state.years=0;state.myr=0;state.effects=[];state.events=[];state.follow=false;state.collapse=null;state.drag=null;state.scenario=name;state.paused=false;$('collapse-overlay').hidden=true;$('preset').value=name;$('age-rate').value=name==='nursery'?'0.1':'10';cancelPlacement();syncPause();
+    const put=(kind,mass,x,y,extra={})=>{const b=makeBody(kind,mass,x,y,extra);state.bodies.push(b);return b;};
+    if(name==='solar') {
+      const sun=put('yellow',1,0,0,{name:'Sol',age:4600});
+      for(const [n,r,m,a] of [['Cinder',.48,EARTH*.55,-.5],['Terra',1,EARTH,1.8],['Glacier',1.9,EARTH*1.8,3.8],['Atlas',3.25,JUPITER,5.5]]) {
+        const b=put(n==='Atlas'?'gas':'rocky',m,r*Math.cos(a),r*Math.sin(a),{name:n});orbitVelocity(b);
+      }
+      // At 1 AU this Earth-like toy climate is water-friendly; life must still develop over time.
+      sun.age=4600;state.selected=sun.id;updateStellar(sun);$('scenario-title').textContent='A little room for the extraordinary';
+    } else if(name==='mergers') {
+      put('gas',.04,-.5,0,{name:'Ember A',vx:.3});put('gas',.04,.5,0,{name:'Ember B',vx:-.3});state.selected=state.bodies[0].id;
+      $('scenario-title').textContent='Two brown dwarfs. One new star.';
+    } else if(name==='nursery') {
+      const star=put('blue',25,0,0,{name:'Aster',age:lifetime(25)*.70});
+      const b=put('gas',JUPITER,5,0,{name:'Wanderer'});orbitVelocity(b);state.selected=star.id;
+      $('scenario-title').textContent='Nothing ends. It becomes something else.';
+    } else $('scenario-title').textContent='An empty sky. An open invitation.';
+    barycentric();temperatures(0);fit();event(name==='empty'?'Your canvas is ready. Add the first object.':'Scenario loaded. Make it your own.');refreshInspector(true);
+  }
+  let lastList='',lastInspector='';
+  function refreshInspector(force=false) {
+    const signature=state.bodies.map(b=>b.id+':'+b.name+':'+b.kind).join('|');
+    if(signature!==lastList||force) {
+      const list=$('object-list');list.replaceChildren();const blank=document.createElement('option');blank.value='';blank.textContent='Choose a body…';list.append(blank);
+      for(const b of state.bodies){const opt=document.createElement('option');opt.value=b.id;opt.textContent=b.name+' · '+names[b.kind];list.append(opt);}lastList=signature;
+    }
+    $('object-list').value=state.selected??'';
+    const b=selected();
+    if(!b){if(lastInspector!=='empty'||force){$('inspection').innerHTML='<div class="empty-inspector">Select a world or star<br>to take a closer look.</div>';lastInspector='empty';}return;}
+    const life=isStar(b)?clamp(100*(1-b.age/lifetime(b.mass)),0,100):null;
+    const stamp=b.id+':'+b.kind+':'+b.life;
+    if(lastInspector!==stamp||force) {
+      $('inspection').innerHTML='<div id="object-art" aria-hidden="true"></div><div class="object-heading"><span id="object-name"></span><span id="object-type"></span><br><span id="object-badge" class="badge"></span></div><div class="readout"><span>Mass</span><strong id="read-mass"></strong></div><div class="readout"><span>Temperature</span><strong id="read-temp"></strong></div><div class="readout"><span>Speed</span><strong id="read-speed"></strong></div><div id="stellar-readout"></div><div class="inspector-buttons"><button id="follow-body">Follow</button><button id="remove-body">Remove</button></div>';
+      $('follow-body').onclick=()=>{state.follow=!state.follow;refreshInspector(true);};
+      $('remove-body').onclick=()=>{if(state.collapse)return;state.bodies=state.bodies.filter(o=>o!==b);state.selected=null;state.follow=false;event(b.name+' removed.');temperatures(0);refreshInspector(true);};
+      $('object-name').textContent=b.name;
+      const color=colors[b.kind];$('object-art').style.background=b.kind==='blackHole'?'radial-gradient(circle,#030409 49%,#ffbd76 55%,#472218 66%,transparent 70%)':`radial-gradient(circle at 30% 25%,#f6f6ef,${color} 35%,#121c2a 105%)`;$('object-art').style.boxShadow=`0 0 35px ${color}33`;
+      lastInspector=stamp;
+    }
+    $('object-type').textContent=phase(b);$('object-badge').textContent=b.kind==='rocky'?(b.life?'SIMULATED BIOSPHERE':b.temp>=273&&b.temp<=323?'WATER-FRIENDLY':'ROCKY WORLD'):isStar(b)?'FUSION ACTIVE':b.kind==='blackHole'?'COMPACT REMNANT':b.kind==='cloud'?'COOLING EJECTA':b.kind==='gas'?'HYDROGEN-RICH':'EXPLORING THE COSMOS';
+    $('read-mass').textContent=massText(b.mass);$('read-temp').textContent=b.kind==='blackHole'?b.temp.toExponential(2)+' K':numberText(b.temp)+' K';$('read-speed').textContent=(Math.hypot(b.vx,b.vy)*4.74047).toFixed(1)+' km/s';$('follow-body').textContent=state.follow?'Following ✓':'Follow';
+    const sr=$('stellar-readout');
+    if(life!==null) {
+      if(!sr.querySelector('#life-value')){sr.innerHTML='<div class="readout"><span>Stellar life left</span><strong id="life-value"></strong></div><div class="life-bar"><div id="life-fill"></div></div><div class="small-note" id="age-text"></div><button id="age-star">Advance 10% of this star’s life →</button>';$('age-star').onclick=()=>{if(state.collapse)return;b.age+=lifetime(b.mass)*.1;evolve(0);temperatures(0);checkFinale();refreshInspector(true);};}
+      $('life-value').textContent=life.toFixed(1)+'%';$('life-fill').style.width=life+'%';$('age-text').textContent=(b.age/1000).toFixed(2)+' / '+(lifetime(b.mass)/1000).toFixed(2)+' Gyr · approximate';
+    } else if(b.kind==='rocky')sr.innerHTML='<div class="small-note">'+(b.life?'A simulated biosphere is flourishing.':b.temp>=273&&b.temp<=323?'Stable warmth: '+Math.min(100,b.habitableTime).toFixed(0)+' / 100 Myr toward simulated life.':'Liquid surface water is unlikely in this climate model.')+'</div>';
+    else if(b.kind==='cloud')sr.innerHTML='<div class="small-note">'+(b.mass>=.075?'Cooling: '+Math.max(0,60-b.age).toFixed(1)+' Myr until protostar formation.':'Too little mass for fusion; can collect more gas.')+'</div>';
+    else if(b.kind==='protostar')sr.innerHTML='<div class="small-note">Contracting: '+Math.max(0,5-b.age).toFixed(1)+' Myr until fusion.</div>';
+    else if(b.kind==='blackHole')sr.innerHTML='<div class="small-note">Hawking temperature shown. '+($('finale').checked?'Arcade finale at 40 M☉.':'Ordinary gravity; arcade finale disabled.')+'</div>';
+    else sr.innerHTML='<div class="small-note">'+(b.kind==='gas'?'Accrete hydrogen-rich mass to become a brown dwarf, then a star.':b.kind==='brown'?'Below the ~0.075 M☉ hydrogen-fusion threshold.':'A stellar remnant cooling through time.')+'</div>';
+  }
+  function syncPause() {for(const id of ['pause','quick-pause']){$(id).textContent=state.paused?'▶ Play':'Ⅱ Pause';$(id).setAttribute('aria-pressed',String(state.paused));}$('live-dot').style.background=state.paused?'#ffd18a':'#a0edc9';}
+  function zoom(factor,x=state.width/2,y=state.height*.46) {
+    const before=toWorld(x,y);state.camera.zoom=clamp(state.camera.zoom*factor,1,1500);const after=toWorld(x,y);state.camera.x+=before.x-after.x;state.camera.y+=before.y-after.y;
+  }
+  let panelLayoutCompact=null,scaleLineY=0;
+  const panelOverrides={overview:false,inspector:false,dock:false};
+  const compactLayout=()=>innerWidth<=700||innerHeight<=500;
+  function setModuleExpanded(name,expanded,remember=true) {
+    const toggle=$(name==='overview'?'overview-toggle':'inspect-toggle'),content=$(name+'-content');
+    if(remember)panelOverrides[name]=true;
+    if(expanded&&compactLayout())setModuleExpanded(name==='overview'?'inspector':'overview',false,remember);
+    if(!expanded&&content.contains(document.activeElement))toggle.focus({preventScroll:true});
+    $(name).classList.toggle('compact',!expanded);content.hidden=!expanded;
+    toggle.setAttribute('aria-expanded',String(expanded));toggle.querySelector('.toggle-icon').textContent=expanded?'−':'+';
+    updatePanelLayout();
+  }
+  function setDockMode(mode,remember=true) {
+    if(!['full','objects','collapsed'].includes(mode))return;
+    if(remember)panelOverrides.dock=true;
+    $('dock').dataset.mode=mode;$('creation-content').hidden=mode==='collapsed';
+    $('creation-advanced').hidden=mode!=='full';$('dock-help').hidden=mode!=='full';$('quick-controls').hidden=mode==='full';
+    document.querySelectorAll('[data-dock-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.dockMode===mode)));
+    $('dock').scrollTop=0;updatePanelLayout();
+  }
+  function updatePanelLayout() {
+    const dock=$('dock').getBoundingClientRect(),bottom=state.height-dock.top;
+    $('quick-controls').style.bottom=(bottom+10)+'px';
+    const quickHeight=$('quick-controls').hidden?0:$('quick-controls').offsetHeight+10;
+    $('hint').style.bottom=(bottom+quickHeight+24)+'px';scaleLineY=dock.top-quickHeight-8;
+    for(const name of ['overview','inspector']) {
+      const panel=$(name),toggle=$(name==='overview'?'overview-toggle':'inspect-toggle'),style=getComputedStyle(panel);
+      const available=dock.top-panel.getBoundingClientRect().top-toggle.offsetHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-14;
+      panel.style.setProperty('--module-content-height',Math.max(0,available)+'px');
+    }
+  }
+  function resize() {
+    state.width=innerWidth;state.height=innerHeight;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=innerWidth*dpr;canvas.height=innerHeight*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const compact=compactLayout();
+    if(panelLayoutCompact!==compact){
+      panelLayoutCompact=compact;
+      if(!panelOverrides.overview)setModuleExpanded('overview',!compact,false);
+      if(!panelOverrides.inspector)setModuleExpanded('inspector',!compact,false);
+      if(!panelOverrides.dock)setDockMode(compact?'objects':'full',false);
+    }
+    updatePanelLayout();
+  }
+  // Deterministic star field, independent of the physical bodies.
+  let seed=1948;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  const stars=Array.from({length:450},()=>({x:random(),y:random(),r:.35+random(),alpha:.12+random()*.5}));
+  function circle(x,y,r){ctx.beginPath();ctx.arc(x,y,Math.max(.1,r),0,Math.PI*2);}
+  function drawBody(b,now) {
+    const p=toScreen(b.x,b.y),r=radius(b),color=b.kind==='rocky'?(b.temp>=1400?'#ff792e':b.life?'#6eb9be':b.temp<273?'#b5d7e8':b.temp>373?'#b78068':'#7aa5a8'):colors[b.kind];
+    if(p.x<-100||p.y<-100||p.x>state.width+100||p.y>state.height+100)return;
+    ctx.save();ctx.translate(p.x,p.y);
+    if(b.kind==='blackHole') {
+      ctx.rotate(-.35);const glow=ctx.createRadialGradient(0,0,r*.7,0,0,r*2.8);glow.addColorStop(0,'#0000');glow.addColorStop(.35,'#ffb56166');glow.addColorStop(1,'#0000');ctx.fillStyle=glow;ctx.fillRect(-r*3,-r*3,r*6,r*6);
+      ctx.strokeStyle='#ffbe85';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,r*1.7,r*.55,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#030409';circle(0,0,r);ctx.fill();ctx.strokeStyle='#ffcb9e';ctx.lineWidth=1.5;ctx.stroke();
+    } else if(b.kind==='cloud') {
+      const g=ctx.createRadialGradient(0,0,0,0,0,r*2);g.addColorStop(0,'#c7a3ed66');g.addColorStop(.5,'#8e68b233');g.addColorStop(1,'#8e68b200');ctx.fillStyle=g;circle(0,0,r*2);ctx.fill();
+      ctx.fillStyle='#d6bfec';circle(0,0,1.5);ctx.fill();
+    } else {
+      if(isLuminous(b)||b.temp>=1400){const glow=ctx.createRadialGradient(0,0,r*.5,0,0,r*3.4);glow.addColorStop(0,color+'66');glow.addColorStop(.4,color+'22');glow.addColorStop(1,color+'00');ctx.fillStyle=glow;circle(0,0,r*3.4);ctx.fill();}
+      const g=ctx.createRadialGradient(-r*.35,-r*.35,r*.05,0,0,r);g.addColorStop(0,isStar(b)?'#fff4cd':color);g.addColorStop(.55,color);g.addColorStop(1,isStar(b)?color:'#1d2937');ctx.fillStyle=g;circle(0,0,r);ctx.fill();
+      ctx.save();circle(0,0,r);ctx.clip();
+      if(b.kind==='gas'||b.kind==='brown'){ctx.rotate(-.25);for(let i=-4;i<=4;i++){ctx.fillStyle=i%2?'#6b4c3938':'#fff1d02e';ctx.fillRect(-r,i*r/4,r*2,r*.12);}}
+      if(b.kind==='rocky'){ctx.fillStyle=b.life?'#65ae77':b.temp>=1400?'#772c16':'#d1dee32a';for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(Math.sin(b.id+i*4)*r*.6,Math.cos(b.id+i*3)*r*.6,r*.26,r*.15,i,0,Math.PI*2);ctx.fill();}if(b.life){ctx.fillStyle='#f6ffff66';ctx.fillRect(-r,-r*.4,2*r,r*.08);}}
+      ctx.restore();
+      if(b.life){ctx.strokeStyle='#a0edc966';ctx.lineWidth=1;circle(0,0,r+3);ctx.stroke();}
+    }
+    if(b.id===state.selected){ctx.strokeStyle='#a0edc9';ctx.lineWidth=1;ctx.setLineDash([3,4]);circle(0,0,r+7);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#a0edc9';circle(0,-r-7,2);ctx.fill();}
+    ctx.restore();
+    if($('labels').checked){ctx.font='11px system-ui';ctx.textAlign='center';ctx.fillStyle=b.id===state.selected?'#d5f7e8':'#9aafc5';ctx.fillText(b.name,p.x,p.y+r+23);ctx.font='9px ui-monospace,monospace';ctx.fillStyle='#657b94';ctx.fillText(b.kind==='rocky'?numberText(b.temp)+' K':massText(b.mass),p.x,p.y+r+36);}
+  }
+  function draw(now) {
+    const w=state.width,h=state.height;ctx.fillStyle='#080d16';ctx.fillRect(0,0,w,h);
+    const nebula=ctx.createRadialGradient(w*.55,h*.4,0,w*.55,h*.4,w*.55);nebula.addColorStop(0,'#15263b55');nebula.addColorStop(1,'#080d1600');ctx.fillStyle=nebula;ctx.fillRect(0,0,w,h);
+    for(const s of stars){ctx.fillStyle=`rgba(190,211,237,${s.alpha})`;circle((s.x*w-state.camera.x*1.5+w)%w,(s.y*h-state.camera.y*1.5+h)%h,s.r);ctx.fill();}
+    if($('zones').checked)for(const b of state.bodies.filter(isStar)) {
+      const p=toScreen(b.x,b.y),inner=Math.sqrt(b.luminosity)*((278.3*.7**.25)/(323-33))**2*state.camera.zoom,outer=Math.sqrt(b.luminosity)*((278.3*.7**.25)/(273-33))**2*state.camera.zoom;
+      if(outer>5000)continue;ctx.fillStyle='#84d4ae06';ctx.beginPath();ctx.arc(p.x,p.y,outer,0,Math.PI*2);ctx.arc(p.x,p.y,inner,0,Math.PI*2,true);ctx.fill();ctx.strokeStyle='#84d4ae19';ctx.lineWidth=1;ctx.setLineDash([3,7]);circle(p.x,p.y,inner);ctx.stroke();circle(p.x,p.y,outer);ctx.stroke();ctx.setLineDash([]);
+    }
+    if($('trails').checked)for(const b of state.bodies) {
+      if(b.trail.length<2)continue;ctx.beginPath();b.trail.forEach((v,i)=>{const p=toScreen(v[0],v[1]);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.strokeStyle=(b.life?'#a0edc9':colors[b.kind])+'44';ctx.lineWidth=1;ctx.stroke();
+    }
+    for(const fx of state.effects) {const p=toScreen(fx.x,fx.y);ctx.globalAlpha=Math.max(0,1-fx.age/2);ctx.strokeStyle=fx.color;ctx.lineWidth=1.5;circle(p.x,p.y,fx.age*60*fx.size+5);ctx.stroke();ctx.globalAlpha=1;}
+    [...state.bodies].sort((a,b)=>b.mass-a.mass).forEach(b=>drawBody(b,now));
+    if(state.drag?.type==='launch') {
+      const a=toScreen(state.drag.start.x,state.drag.start.y),p=toScreen(state.drag.end.x,state.drag.end.y);ctx.strokeStyle='#a0edc9';ctx.lineWidth=1.5;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.setLineDash([]);circle(a.x,a.y,8);ctx.stroke();ctx.fillStyle='#a0edc9';ctx.font='11px ui-monospace,monospace';ctx.textAlign='left';ctx.fillText((Math.hypot(state.drag.end.x-state.drag.start.x,state.drag.end.y-state.drag.start.y)*5*4.74047).toFixed(1)+' km/s',p.x+12,p.y);
+    }
+    const unit=10**Math.floor(Math.log10(70/state.camera.zoom)),len=unit*state.camera.zoom;
+    ctx.strokeStyle='#52657d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(w/2-len/2,scaleLineY);ctx.lineTo(w/2+len/2,scaleLineY);ctx.stroke();$('scale').textContent=unit+' AU';
+  }
+  function hit(x,y) {return [...state.bodies].reverse().find(b=>{const p=toScreen(b.x,b.y);return Math.hypot(p.x-x,p.y-y)<radius(b)+9;});}
+  canvas.addEventListener('pointerdown',e=>{
+    if(e.button!==0||state.collapse)return;canvas.focus();canvas.setPointerCapture(e.pointerId);
+    const world=toWorld(e.clientX,e.clientY),b=hit(e.clientX,e.clientY);
+    if(state.spawnKind) {
+      if($('launch').value==='aim')state.drag={type:'launch',start:world,end:world};
+      else add(state.spawnKind,world.x,world.y);
+    } else if(b) {state.selected=b.id;state.follow=false;state.drag={type:'body',body:b,offset:{x:b.x-world.x,y:b.y-world.y}};b.trail=[];refreshInspector(true);}
+    else {state.follow=false;state.drag={type:'pan',x:e.clientX,y:e.clientY,camera:{...state.camera}};}
+  });
+  canvas.addEventListener('pointermove',e=>{
+    const d=state.drag;if(!d)return;const world=toWorld(e.clientX,e.clientY);
+    if(d.type==='body'){d.body.x=world.x+d.offset.x;d.body.y=world.y+d.offset.y;d.body.trail=[];temperatures(0);}
+    if(d.type==='pan'){state.camera.x=d.camera.x-(e.clientX-d.x)/state.camera.zoom;state.camera.y=d.camera.y-(e.clientY-d.y)/state.camera.zoom;}
+    if(d.type==='launch')d.end=world;
+  });
+  canvas.addEventListener('pointerup',e=>{
+    const d=state.drag;
+    if(d?.type==='launch')add(state.spawnKind,d.start.x,d.start.y,{x:(d.end.x-d.start.x)*5,y:(d.end.y-d.start.y)*5});
+    state.drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);collisions();temperatures(0);checkFinale();refreshInspector();
+  });
+  canvas.addEventListener('pointercancel',()=>{state.drag=null;});
+  canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.exp(-e.deltaY*.001),e.clientX,e.clientY);},{passive:false});
+  let paletteDrag=null;
+  document.addEventListener('pointerdown',e=>{
+    const card=e.target.closest('.spawn-card');if(!card||e.button!==0||state.collapse)return;
+    e.preventDefault();chooseKind(card.dataset.kind);
+    paletteDrag={kind:card.dataset.kind,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};
+  },true);
+  document.addEventListener('pointermove',e=>{
+    if(paletteDrag&&e.pointerId===paletteDrag.pointerId&&Math.hypot(e.clientX-paletteDrag.x,e.clientY-paletteDrag.y)>6)paletteDrag.moved=true;
+  },true);
+  document.addEventListener('pointerup',e=>{
+    if(!paletteDrag||e.pointerId!==paletteDrag.pointerId)return;
+    if(paletteDrag.moved&&document.elementFromPoint(e.clientX,e.clientY)===canvas){const p=toWorld(e.clientX,e.clientY);add(paletteDrag.kind,p.x,p.y);}
+    paletteDrag=null;
+  },true);
+  document.addEventListener('pointercancel',()=>{paletteDrag=null;});
+  for(const card of document.querySelectorAll('.spawn-card'))card.addEventListener('click',e=>{if(e.detail===0)chooseKind(card.dataset.kind);});
+  $('pause').onclick=()=>{state.paused=!state.paused;syncPause();};
+  $('quick-pause').onclick=$('pause').onclick;$('quick-fit').onclick=fit;
+  $('reset').onclick=()=>loadPreset($('preset').value);$('preset').onchange=e=>loadPreset(e.target.value);
+  $('fit').onclick=fit;$('zoom-in').onclick=()=>zoom(1.3);$('zoom-out').onclick=()=>zoom(1/1.3);
+  $('object-list').onchange=e=>{state.selected=e.target.value?Number(e.target.value):null;state.follow=false;refreshInspector(true);};
+  $('overview-toggle').onclick=()=>setModuleExpanded('overview',$('overview-content').hidden);
+  $('inspect-toggle').onclick=()=>setModuleExpanded('inspector',$('inspector-content').hidden);
+  for(const button of document.querySelectorAll('[data-dock-mode]'))button.onclick=()=>setDockMode(button.dataset.dockMode);
+  $('science').onclick=()=>{$('science-dialog').showModal();};$('close-science').onclick=()=>{$('science-dialog').close();};
+  $('place-center').onclick=()=>{if(!state.spawnKind)chooseKind('yellow');add(state.spawnKind,state.camera.x,state.camera.y);$('science-dialog').close();};
+  document.addEventListener('keydown',e=>{
+    if($('science-dialog').open)return;
+    if(e.key==='Escape'){cancelPlacement();state.drag=null;return;}
+    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(document.activeElement?.tagName))return;
+    if(e.code==='Space'){e.preventDefault();state.paused=!state.paused;syncPause();}
+    if(e.key==='Delete'&&selected())$('remove-body').click();
+    if(e.key==='+'||e.key==='=')zoom(1.25);if(e.key==='-')zoom(.8);
+  });
+  addEventListener('resize',resize);addEventListener('blur',()=>{state.drag=null;});
+  new ResizeObserver(updatePanelLayout).observe($('dock'));
+  let lastFrame=0,lastUI=0,lastTrail=0;
+  function frame(now) {
+    const dt=lastFrame?Math.min((now-lastFrame)/1000,.05):0;lastFrame=now;
+    if(!state.paused&&!$('science-dialog').open) {
+      if(state.collapse)finaleStep(dt);
+      else {physics(dt*Number($('orbit-rate').value));evolve(dt*Number($('age-rate').value));checkFinale();}
+      if(now-lastTrail>60){for(const b of state.bodies){b.trail.push([b.x,b.y]);if(b.trail.length>240)b.trail.shift();}lastTrail=now;}
+      for(const fx of state.effects)fx.age+=dt;state.effects=state.effects.filter(fx=>fx.age<2);
+    }
+    if(state.follow&&selected()){state.camera.x=selected().x;state.camera.y=selected().y;}
+    if(now>state.toastUntil)$('toast').classList.remove('visible');
+    if(now-lastUI>120){$('body-count').textContent=state.bodies.length;$('life-count').textContent=state.bodies.filter(b=>b.life).length;$('total-mass').textContent=massText(state.bodies.reduce((s,b)=>s+b.mass,0));$('elapsed').textContent=state.years.toFixed(2)+' yr';$('stellar-elapsed').textContent=state.myr<1000?state.myr.toFixed(0)+' Myr':(state.myr/1000).toFixed(2)+' Gyr';refreshInspector();lastUI=now;}
+    draw(now);requestAnimationFrame(frame);
+  }
+  // Small, deterministic API for the accompanying physics and interaction checks.
+  window.PlanetLab={state,makeBody,physics,evolve,merge,collisions,temperatures,lifetime,luminosityMS,loadPreset,checkFinale,finaleStep,add,chooseKind,cancelPlacement,toScreen,toWorld,radius,fit,refreshInspector};
+  resize();loadPreset('solar');if(!new URLSearchParams(location.search).has('test'))requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

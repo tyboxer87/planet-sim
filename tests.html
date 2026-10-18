@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Planet Lab checks</title><style>body{background:#0c1421;color:#dce7f7;font:14px/1.6 monospace;padding:24px}iframe{width:1100px;height:800px;position:absolute;left:-1200px}li.pass{color:#a0edc9}li.fail{color:#ff9c8b}</style></head><body><h1>Planet Lab checks</h1><p id="summary">Running…</p><ol id="results"></ol><iframe id="app" src="index.html?test" title="Isolated test simulation"></iframe><script>
+'use strict';
+document.getElementById('app').onload=()=>{
+ const win=document.getElementById('app').contentWindow,api=win.PlanetLab,out=document.getElementById('results');let passed=0,failed=0;
+ function assert(ok,message='Assertion failed'){if(!ok)throw Error(message);}
+ function near(a,b,tol=1e-10){assert(Math.abs(a-b)<=tol,`${a} ≠ ${b} (tolerance ${tol})`);}
+ function test(name,fn){const li=document.createElement('li');try{fn();passed++;li.className='pass';li.textContent='PASS '+name;}catch(e){failed++;li.className='fail';li.textContent='FAIL '+name+': '+e.message;}out.append(li);}
+ if(!api){document.getElementById('summary').textContent='FAIL: game JavaScript did not initialize';return;}
+ const s=api.state,doc=win.document;
+ const reset=()=>{api.loadPreset('empty');doc.getElementById('finale').checked=false;};
+ const put=(kind,m,x=0,y=0,extra={})=>{const b=api.makeBody(kind,m,x,y,extra);s.bodies.push(b);return b;};
+ const mass=()=>s.bodies.reduce((v,b)=>v+b.mass,0);
+ const momentum=()=>s.bodies.reduce((v,b)=>({x:v.x+b.mass*b.vx,y:v.y+b.mass*b.vy}),{x:0,y:0});
+ test('Default scenario initializes with finite mass and Kelvin temperatures',()=>{api.loadPreset('solar');assert(s.bodies.length===5);assert(s.bodies.every(b=>Number.isFinite(b.temp)&&b.temp>0));near(mass(),1+3.003e-6*(.55+1+1.8)+.0009546);});
+ test('Gravity attracts both objects and preserves linear momentum',()=>{reset();const a=put('yellow',1,-1),b=put('yellow',1,1);api.physics(.01);assert(a.vx>0&&b.vx<0);near(momentum().x,0);near(momentum().y,0);});
+ test('A circular Earth-like orbit stays bounded over ten years',()=>{reset();put('yellow',1);const p=put('rocky',3.003e-6,1,0,{vy:2*Math.PI});for(let i=0;i<1000;i++)api.physics(.01);assert(s.bodies.length===2);near(Math.hypot(p.x-s.bodies[0].x,p.y-s.bodies[0].y),1,.005);assert(s.years>9.99);});
+ test('Gas merger conserves total mass and linear momentum',()=>{reset();const a=put('gas',.001,-1,0,{vx:2,vy:-1}),b=put('gas',.002,1,0,{vx:-3,vy:4});const before=momentum();api.merge(a,b);near(mass(),.003);near(momentum().x,before.x);near(momentum().y,before.y);assert(s.bodies[0].kind==='gas');});
+ test('Gas giants become brown dwarfs, then hydrogen-burning red dwarfs',()=>{reset();let a=put('gas',.007),b=put('gas',.007,1);let c=api.merge(a,b);assert(c.kind==='brown');const d=put('gas',.065,2);c=api.merge(c,d);assert(c.kind==='red');near(c.mass,.079);});
+ test('Rock-only mergers do not ignite hydrogen fusion',()=>{reset();const c=api.merge(put('rocky',.6),put('rocky',.6,1));assert(c.kind==='rocky');near(c.mass,1.2);});
+ test('Merged stars become hot blue main-sequence stars before a giant phase',()=>{reset();const c=api.merge(put('yellow',1),put('yellow',1.2,1));assert(c.kind==='blue');assert(c.temp>5772);});
+ test('Fuel fractions survive stellar mergers',()=>{reset();const a=put('yellow',1,0,0,{age:api.lifetime(1)*.5}),b=put('yellow',1,1,0,{age:api.lifetime(1)*.5});const c=api.merge(a,b);near(c.age/api.lifetime(c.mass),.5);});
+ test('Sun-like star grows into a red giant and leaves a white dwarf',()=>{reset();const b=put('yellow',1,0,0,{age:api.lifetime(1)*.91});assert(b.kind==='giant');b.age=api.lifetime(1)+1;api.evolve(0);assert(b.kind==='whiteDwarf');assert(s.bodies.some(v=>v.kind==='cloud'));near(mass(),1);});
+ test('A red dwarf eventually leaves a white dwarf, not another red dwarf',()=>{reset();const b=put('red',.15,0,0,{age:api.lifetime(.15)+1});api.evolve(0);assert(b.kind==='whiteDwarf');near(mass(),.15);assert(api.lifetime(.15)>100000);});
+ test('Core-collapse supernova leaves a neutron star and conserves mass/momentum',()=>{reset();const b=put('blue',10,0,0,{age:api.lifetime(10)+1,vx:2,vy:-3});const before=momentum();api.evolve(0);assert(b.kind==='neutron');near(b.mass,1.4);near(mass(),10);near(momentum().x,before.x);near(momentum().y,before.y);assert(s.bodies.filter(v=>v.kind==='cloud').length===6);});
+ test('Massive-star collapse makes a black hole with a Hawking temperature',()=>{reset();const b=put('blue',25,0,0,{age:api.lifetime(25)+1});api.evolve(0);assert(b.kind==='blackHole');assert(b.temp>0&&b.temp<1e-7);near(mass(),25);});
+ test('Cooling ejecta form protostars before hydrogen ignition',()=>{reset();const b=put('cloud',1,0,0,{age:59});api.evolve(1);assert(b.kind==='protostar');api.evolve(5);assert(b.kind==='yellow');near(mass(),1);});
+ test('White-dwarf accretion produces a thermonuclear supernova without a remnant',()=>{reset();api.merge(put('whiteDwarf',.8,0,0,{gasFraction:0}),put('whiteDwarf',.8,1,0,{gasFraction:0}));near(mass(),1.6);assert(s.bodies.every(b=>b.kind==='cloud'));});
+ test('A neutron star above the model mass limit collapses',()=>{reset();const b=api.merge(put('neutron',1.5,0,0,{gasFraction:0}),put('neutron',1.4,1,0,{gasFraction:0}));assert(b.kind==='blackHole');near(mass(),2.9);});
+ test('Rocky climates distinguish ice, temperate, hot rock, and lava',()=>{reset();put('yellow',1);const ice=put('rocky',3e-6,3),earth=put('rocky',3e-6,1),hot=put('rocky',3e-6,.4),lava=put('rocky',3e-6,.02);api.temperatures(0);assert(ice.temp<273);assert(earth.temp>=273&&earth.temp<=323);assert(hot.temp>373&&hot.temp<1400);assert(lava.temp>=1400);});
+ test('Simulated life requires sustained warmth and is lost if the world freezes',()=>{reset();put('yellow',1);const earth=put('rocky',3e-6,1);api.temperatures(99);assert(!earth.life);api.temperatures(1);assert(earth.life);earth.x=10;api.temperatures(0);assert(!earth.life);near(earth.habitableTime,0);});
+ test('Radiation from multiple stars adds to the planet heat budget',()=>{reset();put('yellow',1,-1);const p=put('rocky',3e-6,0);api.temperatures(0);const t=p.temp;put('yellow',1,1);api.temperatures(0);assert(p.temp>t);near((p.temp-33)/(t-33),2**.25);});
+ test('An unilluminated rocky world cools to the background floor',()=>{reset();const p=put('rocky',3e-6);api.temperatures(0);near(p.temp,2.725);});
+ test('Black holes can accrete cooling gas clouds',()=>{reset();put('blackHole',5);put('cloud',1);api.collisions();assert(s.bodies.length===1);assert(s.bodies[0].kind==='blackHole');near(mass(),6);});
+ test('Selecting the same palette type preserves custom spawn mass',()=>{reset();api.chooseKind('yellow');doc.getElementById('spawn-mass').value=8;api.chooseKind('yellow');near(Number(doc.getElementById('spawn-mass').value),8);const b=api.add('yellow',3,0);assert(b.kind==='blue');near(b.mass,8);});
+ test('Invalid spawn masses are rejected without changing the universe',()=>{reset();api.chooseKind('gas');doc.getElementById('spawn-mass').value=-1;assert(api.add('gas',0,0)===null);assert(s.bodies.length===0);});
+ test('A paused game merges objects dragged into contact without advancing time',()=>{reset();s.paused=true;put('gas',.001);put('gas',.001);api.collisions();assert(s.bodies.length===1);near(s.years,0);near(mass(),.002);});
+ test('Finale is optional; 40-solar-mass black hole triggers a fresh universe',()=>{reset();put('blackHole',40);put('yellow',1,3);api.checkFinale();assert(s.collapse===null);doc.getElementById('finale').checked=true;api.checkFinale();assert(s.collapse!==null);api.finaleStep(5);assert(s.collapse===null);assert(s.scenario==='solar');assert(s.bodies.length===5);near(s.years,0);});
+ test('Camera coordinate transforms round-trip after pan and zoom',()=>{s.camera={x:23,y:-4,zoom:37};const p=api.toScreen(1.2,-.9),w=api.toWorld(p.x,p.y);near(w.x,1.2);near(w.y,-.9);});
+ test('Reset clears selection, simulation clocks, and all remnants',()=>{api.loadPreset('empty');assert(s.bodies.length===0);assert(s.selected===null);near(s.years,0);near(s.myr,0);assert(s.collapse===null);});
+ document.getElementById('summary').textContent=`${passed} passed, ${failed} failed`;document.title=failed?'FAIL Planet Lab':'PASS Planet Lab';
+};
+</script></body></html>
